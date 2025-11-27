@@ -13,7 +13,6 @@ class BankingSystemImpl(BankingSystem):
         # Dictionary to save account id, cashback amount, cashback time and status of cashback
         self.cashbacks = {}
 
-
     # ---------------------
     # Level 1 functionality
     # ---------------------
@@ -42,7 +41,7 @@ class BankingSystemImpl(BankingSystem):
         target_account_id: str,
         amount: int,
     ) -> int | None:
-        
+
         self.process_cashbacks(timestamp)
 
         # Validate accounts and different IDs
@@ -79,7 +78,6 @@ class BankingSystemImpl(BankingSystem):
         result = [f"{acc_id}({total})" for acc_id, total in entries[:n]]
         return result
 
-
     # ---------------------
     # Level 3 functionality
     # ---------------------
@@ -92,8 +90,7 @@ class BankingSystemImpl(BankingSystem):
                 info["status"] = "CASHBACK_RECEIVED"
                 self.accounts[info["account_id"]] += info["cashback_amount"]
 
-
-    def pay(self, timestamp: int, account_id:str, amount: int) -> str | None:
+    def pay(self, timestamp: int, account_id: str, amount: int) -> str | None:
         self.process_cashbacks(timestamp)
 
         # Validate account:
@@ -112,18 +109,26 @@ class BankingSystemImpl(BankingSystem):
 
         # Calculate cashback (2% of amount, rounded to nearest integer)
         cashback_amount = (amount * 2) // 100
-        cashback_time = timestamp + 86400000 # waiting period: 24 hours (24*60*60*1000 ms)
+        cashback_time = (
+            timestamp + 86400000
+        )  # waiting period: 24 hours (24*60*60*1000 ms)
 
         # Store cashback info
-        self.cashbacks[payment_id] = { "account_id": account_id, "cashback_amount": cashback_amount, "cashback_time": cashback_time, "status": "IN_PROGRESS" }
+        self.cashbacks[payment_id] = {
+            "account_id": account_id,
+            "cashback_amount": cashback_amount,
+            "cashback_time": cashback_time,
+            "status": "IN_PROGRESS",
+        }
 
         return payment_id
-    
-    
-    def get_payment_status(self, timestamp:int, account_id: str, payment: str) -> str | None:
+
+    def get_payment_status(
+        self, timestamp: int, account_id: str, payment: str
+    ) -> str | None:
         self.process_cashbacks(timestamp)
-        
-        # Validate account 
+
+        # Validate account
         if account_id not in self.accounts:
             return None
         # Validate payment
@@ -133,10 +138,5 @@ class BankingSystemImpl(BankingSystem):
         # Validate account matches payment
         if cashback_info["account_id"] != account_id:
             return None
-        
+
         return cashback_info["status"]
-
-
-
-        
-        
