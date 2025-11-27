@@ -51,9 +51,9 @@ class BankingSystemImpl(BankingSystem):
         self.outgoing[source_account_id] += amount
         return self.accounts[source_account_id]
 
-    # ---------------------
+    # ----------------------
     # Level 2 functionality
-    # ---------------------
+    # ----------------------
 
     def top_spenders(self, timestamp: int, n: int) -> list[str]:
         # Prepare sortable list of (account_id, total_outgoing)
