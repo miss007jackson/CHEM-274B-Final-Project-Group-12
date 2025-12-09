@@ -1,3 +1,6 @@
+# Level 4 Code
+
+
 from banking_system import BankingSystem
 
 
@@ -16,7 +19,7 @@ class BankingSystemImpl(BankingSystem):
         # payment_id -> {account_id, cashback_amount, cashback_time, status}
         self.cashbacks: dict[str, dict] = {}
         # a dict of dicts
-        
+
         # -------- Level 4 bookkeeping --------
         # account_id -> list of (timestamp, balance_after_that_timestamp)
         self.balance_history: dict[str, list[tuple[int, int]]] = {}
@@ -43,9 +46,9 @@ class BankingSystemImpl(BankingSystem):
         if created is None or time_at < created:
             return None
 
-        # If account was merged away, it ceases to exist strictly AFTER merge_time
+        # If account was merged away, it ceases to exist at merge_time and later
         mt = self.merge_time.get(account_id)
-        if mt is not None and time_at > mt:   # <-- FIXED: must allow time_at == mt
+        if mt is not None and time_at >= mt:
             return None
 
         history = self.balance_history.get(account_id, [])
@@ -82,15 +85,21 @@ class BankingSystemImpl(BankingSystem):
     # ---------------------
 
     def create_account(self, timestamp: int, account_id: str) -> bool:
-        # For simplicity, IDs are unique forever: can't recreate an old merged account.
-        if account_id in self.accounts or account_id in self.created_at:
+        # If currently active, cannot create
+        if account_id in self.accounts:
             return False
 
+        # Re-create allowed: reset lifecycle state
         self.accounts[account_id] = 0
         self.outgoing[account_id] = 0
         self.created_at[account_id] = timestamp
-        # record initial balance 0 at creation time
+        # Clear previous merge_time (if any) to mark it active again
+        if account_id in self.merge_time:
+            del self.merge_time[account_id]
+        # Start a fresh balance history for this lifecycle
+        self.balance_history[account_id] = []
         self._record_balance(account_id, timestamp)
+
         return True
 
     def deposit(self, timestamp: int, account_id: str, amount: int) -> int | None:
@@ -145,8 +154,7 @@ class BankingSystemImpl(BankingSystem):
 
         # Only active accounts matter for ranking
         entries = [
-            (acc_id, self.outgoing.get(acc_id, 0))
-            for acc_id in self.accounts.keys()
+            (acc_id, self.outgoing.get(acc_id, 0)) for acc_id in self.accounts.keys()
         ]
         # Sort by (-total_outgoing, account_id)
         entries.sort(key=lambda x: (-x[1], x[0]))
@@ -215,8 +223,10 @@ class BankingSystemImpl(BankingSystem):
     # Level 4 functionality
     # ---------------------
 
-    def merge_accounts(self, timestamp: int, account_id_1: str, account_id_2: str) -> bool:
-    
+    def merge_accounts(
+        self, timestamp: int, account_id_1: str, account_id_2: str
+    ) -> bool:
+
         self.process_cashbacks(timestamp)
 
         # Invalid if equal or either doesn't exist
@@ -239,9 +249,6 @@ class BankingSystemImpl(BankingSystem):
         # 4) Mark account_id_2 as merged at this timestamp
         self.merge_time[account_id_2] = timestamp
 
-       # record the balance 
-        self._record_balance(account_id_2, timestamp)
-
         # 5) Remove account_id_2 from active structures
         if account_id_2 in self.accounts:
             del self.accounts[account_id_2]
@@ -253,9 +260,7 @@ class BankingSystemImpl(BankingSystem):
 
         return True
 
-    def get_balance(
-        self, timestamp: int, account_id: str, time_at: int
-    ) -> int | None:
+    def get_balance(self, timestamp: int, account_id: str, time_at: int) -> int | None:
         """
         Return the balance of 'account_id' at logical time 'time_at'.
         - If the account did not exist at time_at, return None.
