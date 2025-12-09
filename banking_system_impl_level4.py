@@ -81,7 +81,7 @@ class BankingSystemImpl(BankingSystem):
                     self._record_balance(acc_id, info["cashback_time"])
 
     # ---------------------
-    # Level 1 functionality
+    # Level -1 functionality
     # ---------------------
 
     def create_account(self, timestamp: int, account_id: str) -> bool:
@@ -146,7 +146,7 @@ class BankingSystemImpl(BankingSystem):
         return self.accounts[source_account_id]
 
     # ---------------------
-    # Level 2 functionality
+    # Level -2 functionality
     # ---------------------
 
     def top_spenders(self, timestamp: int, n: int) -> list[str]:
@@ -220,7 +220,7 @@ class BankingSystemImpl(BankingSystem):
         return cashback_info["status"]
 
     # ---------------------
-    # Level 4 functionality
+    # Level -4 functionality
     # ---------------------
 
     def merge_accounts(
